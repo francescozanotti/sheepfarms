@@ -5,6 +5,52 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>SheepFarm - Clients</title>
   <link rel="stylesheet" href="/css/styles.css">
+  <style>
+    .grid-container {
+      display: flex;
+      flex-direction: column;
+      gap: 2rem;
+    }
+    
+    .render-nodes {
+      margin-top: 2rem;
+    }
+    
+    .node-card {
+      background-color: #f5f5f5;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      padding: 1rem;
+      margin-bottom: 1rem;
+    }
+    
+    .node-card h3 {
+      margin-top: 0;
+    }
+    
+    .node-status {
+      display: inline-block;
+      padding: 0.25rem 0.5rem;
+      border-radius: 3px;
+      font-size: 0.8rem;
+      margin-bottom: 0.5rem;
+    }
+    
+    .status-online {
+      background-color: #d4edda;
+      color: #155724;
+    }
+    
+    .status-offline {
+      background-color: #f8d7da;
+      color: #721c24;
+    }
+    
+    .status-rendering {
+      background-color: #cce5ff;
+      color: #004085;
+    }
+  </style>
 </head>
 <body>
   <div class="app-container">
@@ -16,6 +62,7 @@
         <ul>
           <li><a href="/dashboard">Dashboard</a></li>
           <li><a href="/clients" class="active">Clients</a></li>
+          <li><a href="/render-nodes">Render Nodes</a></li>
         </ul>
       </nav>
       <div class="logout">
@@ -25,56 +72,76 @@
     
     <div class="main-content">
       <header>
-        <h1>Clients</h1>
+        <h1>Farm Management</h1>
         <div class="user-info">
           Welcome, <%= username %>
         </div>
       </header>
       
-      <div class="clients-content">
-        <div class="actions">
-          <button id="addClientBtn" class="action-button">Add New Client</button>
+      <div class="grid-container">
+        <!-- Sheep Clients Section -->
+        <div class="clients-content">
+          <div class="actions">
+            <button id="addClientBtn" class="action-button">Add New Client</button>
+          </div>
+          
+          <div id="addClientForm" class="client-form hidden">
+            <h2>Add New Client</h2>
+            <form id="clientForm">
+              <div class="form-group">
+                <label for="name">Name:</label>
+                <input type="text" id="name" name="name" required>
+              </div>
+              
+              <div class="form-group">
+                <label for="breed">Breed:</label>
+                <input type="text" id="breed" name="breed" required>
+              </div>
+              
+              <div class="form-group">
+                <label for="age">Age:</label>
+                <input type="number" id="age" name="age" min="0" max="20" required>
+              </div>
+              
+              <div class="form-actions">
+                <button type="submit" class="save-button">Save</button>
+                <button type="button" class="cancel-button" id="cancelBtn">Cancel</button>
+              </div>
+            </form>
+          </div>
+          
+          <div class="clients-grid">
+            <h2>Sheep Clients</h2>
+            <div id="clientsList" class="grid">
+              <% if (clients.length > 0) { %>
+                <% clients.forEach(client => { %>
+                  <div class="client-card">
+                    <h3><%= client.name %></h3>
+                    <p>Breed: <%= client.breed %></p>
+                    <p>Age: <%= client.age %></p>
+                  </div>
+                <% }); %>
+              <% } else { %>
+                <p class="no-data">No clients available</p>
+              <% } %>
+            </div>
+          </div>
         </div>
         
-        <div id="addClientForm" class="client-form hidden">
-          <h2>Add New Client</h2>
-          <form id="clientForm">
-            <div class="form-group">
-              <label for="name">Name:</label>
-              <input type="text" id="name" name="name" required>
+        <!-- Render Nodes Section -->
+        <div class="render-nodes">
+          <div class="actions">
+            <button id="refreshNodesBtn" class="action-button">Refresh Nodes</button>
+            <button id="startRenderBtn" class="action-button">Start Rendering</button>
+            <button id="stopRenderBtn" class="action-button">Stop Rendering</button>
+          </div>
+          
+          <div class="nodes-grid">
+            <h2>Render Nodes</h2>
+            <div id="renderNodesList" class="grid">
+              <!-- Render nodes will be populated here via WebSocket -->
+              <p class="no-data">No render nodes connected</p>
             </div>
-            
-            <div class="form-group">
-              <label for="breed">Breed:</label>
-              <input type="text" id="breed" name="breed" required>
-            </div>
-            
-            <div class="form-group">
-              <label for="age">Age:</label>
-              <input type="number" id="age" name="age" min="0" max="20" required>
-            </div>
-            
-            <div class="form-actions">
-              <button type="submit" class="save-button">Save</button>
-              <button type="button" class="cancel-button" id="cancelBtn">Cancel</button>
-            </div>
-          </form>
-        </div>
-        
-        <div class="clients-grid">
-          <h2>Client List</h2>
-          <div id="clientsList" class="grid">
-            <% if (clients.length > 0) { %>
-              <% clients.forEach(client => { %>
-                <div class="client-card">
-                  <h3><%= client.name %></h3>
-                  <p>Breed: <%= client.breed %></p>
-                  <p>Age: <%= client.age %></p>
-                </div>
-              <% }); %>
-            <% } else { %>
-              <p class="no-data">No clients available</p>
-            <% } %>
           </div>
         </div>
       </div>
@@ -88,6 +155,10 @@
     const cancelBtn = document.getElementById('cancelBtn');
     const clientForm = document.getElementById('clientForm');
     const clientsList = document.getElementById('clientsList');
+    const renderNodesList = document.getElementById('renderNodesList');
+    const refreshNodesBtn = document.getElementById('refreshNodesBtn');
+    const startRenderBtn = document.getElementById('startRenderBtn');
+    const stopRenderBtn = document.getElementById('stopRenderBtn');
     
     // Connect WebSocket
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
@@ -125,12 +196,34 @@
       addClientForm.classList.add('hidden');
     });
     
+    // Handle render node actions
+    refreshNodesBtn.addEventListener('click', () => {
+      socket.send(JSON.stringify({
+        type: 'getNodes'
+      }));
+    });
+    
+    startRenderBtn.addEventListener('click', () => {
+      socket.send(JSON.stringify({
+        type: 'renderingState',
+        isRendering: true
+      }));
+    });
+    
+    stopRenderBtn.addEventListener('click', () => {
+      socket.send(JSON.stringify({
+        type: 'renderingState',
+        isRendering: false
+      }));
+    });
+    
     // WebSocket message handling
     socket.onmessage = function(event) {
       try {
         const message = JSON.parse(event.data);
         
         if (message.type === 'clientsList') {
+          // Handle sheep clients update
           const clients = message.data;
           
           if (clients.length > 0) {
@@ -150,9 +243,65 @@
             clientsList.innerHTML = '<p class="no-data">No clients available</p>';
           }
         }
+        else if (message.type === 'nodesList') {
+          // Handle render nodes update
+          const nodes = message.data;
+          
+          if (nodes.length > 0) {
+            renderNodesList.innerHTML = '';
+            
+            nodes.forEach(node => {
+              const nodeEl = document.createElement('div');
+              nodeEl.className = 'node-card';
+              
+              // Determine status class
+              let statusClass = 'status-online';
+              if (node.isRendering) {
+                statusClass = 'status-rendering';
+              } else if (!node.isOnline) {
+                statusClass = 'status-offline';
+              }
+              
+              // Format files if available
+              let filesHtml = '';
+              if (node.files && node.files.length > 0) {
+                filesHtml = `
+                  <p>Files:</p>
+                  <ul>
+                    ${node.files.map(file => `<li>${file}</li>`).join('')}
+                  </ul>
+                `;
+              }
+              
+              nodeEl.innerHTML = `
+                <h3>${node.hostname}</h3>
+                <span class="node-status ${statusClass}">
+                  ${node.isRendering ? 'Rendering' : (node.isOnline ? 'Online' : 'Offline')}
+                </span>
+                <p>Last seen: ${new Date(node.lastSeen).toLocaleString()}</p>
+                ${filesHtml}
+                <p>Console output: <pre>${node.lastOutput || 'No output'}</pre></p>
+              `;
+              renderNodesList.appendChild(nodeEl);
+            });
+          } else {
+            renderNodesList.innerHTML = '<p class="no-data">No render nodes connected</p>';
+          }
+        }
       } catch (error) {
         console.error('Error handling message:', error);
       }
+    };
+    
+    // Request initial data
+    socket.onopen = function() {
+      socket.send(JSON.stringify({
+        type: 'getClients'
+      }));
+      
+      socket.send(JSON.stringify({
+        type: 'getNodes'
+      }));
     };
     
     socket.onerror = function(error) {
