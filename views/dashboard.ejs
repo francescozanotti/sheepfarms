@@ -7,74 +7,93 @@
   <link rel="stylesheet" href="/css/styles.css">
 </head>
 <body>
-  <div class="dashboard-container">
-    <header>
-      <h1>SheepFarm Dashboard</h1>
-      <div class="user-info">
-        Welcome, <%= username %> | <a href="/logout">Logout</a>
+  <div class="app-container">
+    <div class="sidebar">
+      <div class="logo">
+        <h2>SheepFarm</h2>
       </div>
-    </header>
+      <nav>
+        <ul>
+          <li><a href="/dashboard" class="active">Dashboard</a></li>
+          <li><a href="/clients">Clients</a></li>
+        </ul>
+      </nav>
+      <div class="logout">
+        <a href="/logout">Logout</a>
+      </div>
+    </div>
     
-    <nav>
-      <ul>
-        <li><a href="/dashboard" class="active">Dashboard</a></li>
-        <li><a href="/clients">Clients</a></li>
-      </ul>
-    </nav>
-    
-    <main>
-      <div class="dashboard-summary">
-        <div class="summary-card">
-          <h2>Total Clients</h2>
-          <p id="clientCount">0</p>
+    <div class="main-content">
+      <header>
+        <h1>Dashboard</h1>
+        <div class="user-info">
+          Welcome, <%= username %>
+        </div>
+      </header>
+      
+      <div class="dashboard-content">
+        <div class="summary-cards">
+          <div class="card">
+            <h3>Total Clients</h3>
+            <p id="clientCount">0</p>
+          </div>
+          
+          <div class="card">
+            <h3>Today's Activity</h3>
+            <p>0 updates</p>
+          </div>
         </div>
         
-        <div class="summary-card">
-          <h2>Today's Activity</h2>
-          <p>0 updates</p>
+        <div class="recent-activity">
+          <h2>Recent Clients</h2>
+          <div id="recentClients" class="activity-list">
+            <p class="no-data">No recent clients</p>
+          </div>
         </div>
       </div>
-      
-      <div class="recent-clients">
-        <h2>Recent Clients</h2>
-        <div id="recentClients">
-          <p>No recent clients</p>
-        </div>
-      </div>
-    </main>
+    </div>
   </div>
   
   <script>
     // Connect WebSocket
-    const socket = new WebSocket(`${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${window.location.host}`);
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const socket = new WebSocket(`${protocol}//${window.location.host}`);
     
     socket.onmessage = function(event) {
-      const message = JSON.parse(event.data);
-      
-      if (message.type === 'clientsList') {
-        const clients = message.data;
-        document.getElementById('clientCount').textContent = clients.length;
+      try {
+        const message = JSON.parse(event.data);
         
-        const recentClientsDiv = document.getElementById('recentClients');
-        if (clients.length > 0) {
-          recentClientsDiv.innerHTML = '';
+        if (message.type === 'clientsList') {
+          const clients = message.data;
+          document.getElementById('clientCount').textContent = clients.length;
           
-          // Show up to 5 most recent clients
-          const recentClients = clients.slice(-5).reverse();
-          
-          recentClients.forEach(client => {
-            const clientEl = document.createElement('div');
-            clientEl.className = 'client-item';
-            clientEl.innerHTML = `
-              <h3>${client.name}</h3>
-              <p>${client.breed} - ${client.age} years old</p>
-            `;
-            recentClientsDiv.appendChild(clientEl);
-          });
-        } else {
-          recentClientsDiv.innerHTML = '<p>No recent clients</p>';
+          const recentClientsDiv = document.getElementById('recentClients');
+          if (clients.length > 0) {
+            recentClientsDiv.innerHTML = '';
+            
+            // Show up to 5 most recent clients
+            const recentClients = clients.slice(-5).reverse();
+            
+            recentClients.forEach(client => {
+              const clientEl = document.createElement('div');
+              clientEl.className = 'activity-item';
+              clientEl.innerHTML = `
+                <h3>${client.name}</h3>
+                <p>${client.breed} - ${client.age} years old</p>
+              `;
+              recentClientsDiv.appendChild(clientEl);
+            });
+          } else {
+            recentClientsDiv.innerHTML = '<p class="no-data">No recent clients</p>';
+          }
         }
+      } catch (error) {
+        console.error('Error handling message:', error);
       }
+    };
+    
+    socket.onerror = function(error) {
+      console.error('WebSocket error:', error);
     };
   </script>
 </body>

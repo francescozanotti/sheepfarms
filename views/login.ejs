@@ -8,25 +8,25 @@
 </head>
 <body>
   <div class="login-container">
-    <h1>SheepFarm Login</h1>
-    
-    <% if (locals.error) { %>
-      <div class="error-message"><%= error %></div>
-    <% } %>
-    
-    <form action="/login" method="POST">
-      <div class="form-group">
-        <label for="username">Username:</label>
-        <input type="text" id="username" name="username" required>
-      </div>
+    <div class="login-form">
+      <h2>SheepFarm Login</h2>
       
-      <div class="form-group">
-        <label for="password">Password:</label>
-        <input type="password" id="password" name="password" required>
-      </div>
+      <% if (locals.error) { %>
+        <div class="error-message"><%= error %></div>
+      <% } %>
       
-      <button type="submit" class="login-button">Login</button>
-    </form>
+      <form action="/login" method="POST">
+        <div class="form-group">
+          <input type="text" id="username" name="username" placeholder="Username" required>
+        </div>
+        
+        <div class="form-group">
+          <input type="password" id="password" name="password" placeholder="Password" required>
+        </div>
+        
+        <button type="submit" class="login-button">Login</button>
+      </form>
+    </div>
   </div>
 </body>
 </html>

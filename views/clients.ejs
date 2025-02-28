@@ -7,68 +7,78 @@
   <link rel="stylesheet" href="/css/styles.css">
 </head>
 <body>
-  <div class="dashboard-container">
-    <header>
-      <h1>SheepFarm Clients</h1>
-      <div class="user-info">
-        Welcome, <%= username %> | <a href="/logout">Logout</a>
+  <div class="app-container">
+    <div class="sidebar">
+      <div class="logo">
+        <h2>SheepFarm</h2>
       </div>
-    </header>
+      <nav>
+        <ul>
+          <li><a href="/dashboard">Dashboard</a></li>
+          <li><a href="/clients" class="active">Clients</a></li>
+        </ul>
+      </nav>
+      <div class="logout">
+        <a href="/logout">Logout</a>
+      </div>
+    </div>
     
-    <nav>
-      <ul>
-        <li><a href="/dashboard">Dashboard</a></li>
-        <li><a href="/clients" class="active">Clients</a></li>
-      </ul>
-    </nav>
-    
-    <main>
-      <div class="clients-actions">
-        <button id="addClientBtn" class="action-button">Add New Client</button>
-      </div>
+    <div class="main-content">
+      <header>
+        <h1>Clients</h1>
+        <div class="user-info">
+          Welcome, <%= username %>
+        </div>
+      </header>
       
-      <div id="addClientForm" class="add-client-form hidden">
-        <h2>Add New Client</h2>
-        <form id="clientForm">
-          <div class="form-group">
-            <label for="name">Name:</label>
-            <input type="text" id="name" name="name" required>
+      <div class="clients-content">
+        <div class="actions">
+          <button id="addClientBtn" class="action-button">Add New Client</button>
+        </div>
+        
+        <div id="addClientForm" class="client-form hidden">
+          <h2>Add New Client</h2>
+          <form id="clientForm">
+            <div class="form-group">
+              <label for="name">Name:</label>
+              <input type="text" id="name" name="name" required>
+            </div>
+            
+            <div class="form-group">
+              <label for="breed">Breed:</label>
+              <input type="text" id="breed" name="breed" required>
+            </div>
+            
+            <div class="form-group">
+              <label for="age">Age:</label>
+              <input type="number" id="age" name="age" min="0" max="20" required>
+            </div>
+            
+            <div class="form-actions">
+              <button type="submit" class="save-button">Save</button>
+              <button type="button" class="cancel-button" id="cancelBtn">Cancel</button>
+            </div>
+          </form>
+        </div>
+        
+        <div class="clients-grid">
+          <h2>Client List</h2>
+          <div id="clientsList" class="grid">
+            <% if (clients.length > 0) { %>
+              <% clients.forEach(client => { %>
+                <div class="client-card">
+                  <h3><%= client.name %></h3>
+                  <p>Breed: <%= client.breed %></p>
+                  <p>Age: <%= client.age %></p>
+                </div>
+              <% }); %>
+            <% } else { %>
+              <p class="no-data">No clients available</p>
+            <% } %>
           </div>
-          
-          <div class="form-group">
-            <label for="breed">Breed:</label>
-            <input type="text" id="breed" name="breed" required>
-          </div>
-          
-          <div class="form-group">
-            <label for="age">Age:</label>
-            <input type="number" id="age" name="age" min="0" max="20" required>
-          </div>
-          
-          <div class="form-actions">
-            <button type="submit" class="save-button">Save</button>
-            <button type="button" class="cancel-button" id="cancelBtn">Cancel</button>
-          </div>
-        </form>
-      </div>
-      
-      <div class="clients-list">
-        <h2>Client List</h2>
-        <div id="clientsList">
-          <% if (clients.length > 0) { %>
-            <% clients.forEach(client => { %>
-              <div class="client-card">
-                <h3><%= client.name %></h3>
-                <p>Breed: <%= client.breed %></p>
-                <p>Age: <%= client.age %></p>
-              </div>
-            <% }); %>
-          <% } else { %>
-            <p class="no-clients">No clients available</p>
-          <% } %>
         </div>
       </div>
-    </main>
+    </div>
   </div>
   
   <script>
@@ -80,7 +90,8 @@
     const clientsList = document.getElementById('clientsList');
     
     // Connect WebSocket
-    const socket = new WebSocket(`${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${window.location.host}`);
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const socket = new WebSocket(`${protocol}//${window.location.host}`);
     
     // Show/hide form
     addClientBtn.addEventListener('click', () => {
@@ -116,28 +127,36 @@
     
     // WebSocket message handling
     socket.onmessage = function(event) {
-      const message = JSON.parse(event.data);
-      
-      if (message.type === 'clientsList') {
-        const clients = message.data;
+      try {
+        const message = JSON.parse(event.data);
         
-        if (clients.length > 0) {
-          clientsList.innerHTML = '';
+        if (message.type === 'clientsList') {
+          const clients = message.data;
           
-          clients.forEach(client => {
-            const clientEl = document.createElement('div');
-            clientEl.className = 'client-card';
-            clientEl.innerHTML = `
-              <h3>${client.name}</h3>
-              <p>Breed: ${client.breed}</p>
-              <p>Age: ${client.age}</p>
-            `;
-            clientsList.appendChild(clientEl);
-          });
-        } else {
-          clientsList.innerHTML = '<p class="no-clients">No clients available</p>';
+          if (clients.length > 0) {
+            clientsList.innerHTML = '';
+            
+            clients.forEach(client => {
+              const clientEl = document.createElement('div');
+              clientEl.className = 'client-card';
+              clientEl.innerHTML = `
+                <h3>${client.name}</h3>
+                <p>Breed: ${client.breed}</p>
+                <p>Age: ${client.age}</p>
+              `;
+              clientsList.appendChild(clientEl);
+            });
+          } else {
+            clientsList.innerHTML = '<p class="no-data">No clients available</p>';
+          }
         }
+      } catch (error) {
+        console.error('Error handling message:', error);
       }
+    };
+    
+    socket.onerror = function(error) {
+      console.error('WebSocket error:', error);
     };
   </script>
 </body>

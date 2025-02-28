@@ -17,7 +17,7 @@ app.use(session({
   secret: 'your-secret-key',
   resave: false,
   saveUninitialized: true,
-  cookie: { secure: process.env.NODE_ENV === 'production' }
+  cookie: { secure: false } // Set to true in production with HTTPS
 }));
 
 // Parse request bodies
@@ -42,18 +42,22 @@ wss.on('connection', (ws) => {
   ws.send(JSON.stringify({ type: 'clientsList', data: clients }));
   
   ws.on('message', (message) => {
-    const parsedMessage = JSON.parse(message);
-    
-    if (parsedMessage.type === 'addClient') {
-      const newClient = parsedMessage.data;
-      clients.push(newClient);
+    try {
+      const parsedMessage = JSON.parse(message);
       
-      // Broadcast to all clients
-      wss.clients.forEach((client) => {
-        if (client.readyState === WebSocket.OPEN) {
-          client.send(JSON.stringify({ type: 'clientsList', data: clients }));
-        }
-      });
+      if (parsedMessage.type === 'addClient') {
+        const newClient = parsedMessage.data;
+        clients.push(newClient);
+        
+        // Broadcast to all clients
+        wss.clients.forEach((client) => {
+          if (client.readyState === WebSocket.OPEN) {
+            client.send(JSON.stringify({ type: 'clientsList', data: clients }));
+          }
+        });
+      }
+    } catch (error) {
+      console.error('Error processing message:', error);
     }
   });
   
@@ -65,22 +69,25 @@ wss.on('connection', (ws) => {
 // Routes
 app.get('/', (req, res) => {
   if (req.session.isLoggedIn) {
-    res.redirect('/dashboard');
-  } else {
-    res.render('login');
+    return res.redirect('/dashboard');
   }
+  res.render('login');
 });
 
 app.post('/login', (req, res) => {
   const { username, password } = req.body;
   
+  console.log('Login attempt:', username, password);
+  
   // Simple authentication (replace with proper auth)
   if (username === 'admin' && password === 'password') {
     req.session.isLoggedIn = true;
     req.session.username = username;
-    res.redirect('/dashboard');
+    console.log('Login successful, redirecting to dashboard');
+    return res.redirect('/dashboard');
   } else {
-    res.render('login', { error: 'Invalid credentials' });
+    console.log('Login failed');
+    return res.render('login', { error: 'Invalid credentials' });
   }
 });
 
@@ -97,12 +104,13 @@ app.get('/clients', (req, res) => {
     return res.redirect('/');
   }
   
-  res.render('clients', { clients });
+  res.render('clients', { clients, username: req.session.username });
 });
 
 app.get('/logout', (req, res) => {
-  req.session.destroy();
-  res.redirect('/');
+  req.session.destroy(() => {
+    res.redirect('/');
+  });
 });
 
 // Start server
