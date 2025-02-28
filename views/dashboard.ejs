@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SheepFarm - Dashboard</title>
+  <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+  <div class="dashboard-container">
+    <header>
+      <h1>SheepFarm Dashboard</h1>
+      <div class="user-info">
+        Welcome, <%= username %> | <a href="/logout">Logout</a>
+      </div>
+    </header>
+    
+    <nav>
+      <ul>
+        <li><a href="/dashboard" class="active">Dashboard</a></li>
+        <li><a href="/clients">Clients</a></li>
+      </ul>
+    </nav>
+    
+    <main>
+      <div class="dashboard-summary">
+        <div class="summary-card">
+          <h2>Total Clients</h2>
+          <p id="clientCount">0</p>
+        </div>
+        
+        <div class="summary-card">
+          <h2>Today's Activity</h2>
+          <p>0 updates</p>
+        </div>
+      </div>
+      
+      <div class="recent-clients">
+        <h2>Recent Clients</h2>
+        <div id="recentClients">
+          <p>No recent clients</p>
+        </div>
+      </div>
+    </main>
+  </div>
+  
+  <script>
+    // Connect WebSocket
+    const socket = new WebSocket(`${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${window.location.host}`);
+    
+    socket.onmessage = function(event) {
+      const message = JSON.parse(event.data);
+      
+      if (message.type === 'clientsList') {
+        const clients = message.data;
+        document.getElementById('clientCount').textContent = clients.length;
+        
+        const recentClientsDiv = document.getElementById('recentClients');
+        if (clients.length > 0) {
+          recentClientsDiv.innerHTML = '';
+          
+          // Show up to 5 most recent clients
+          const recentClients = clients.slice(-5).reverse();
+          
+          recentClients.forEach(client => {
+            const clientEl = document.createElement('div');
+            clientEl.className = 'client-item';
+            clientEl.innerHTML = `
+              <h3>${client.name}</h3>
+              <p>${client.breed} - ${client.age} years old</p>
+            `;
+            recentClientsDiv.appendChild(clientEl);
+          });
+        } else {
+          recentClientsDiv.innerHTML = '<p>No recent clients</p>';
+        }
+      }
+    };
+  </script>
+</body>
+</html>
