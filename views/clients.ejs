@@ -62,7 +62,6 @@
         <ul>
           <li><a href="/dashboard">Dashboard</a></li>
           <li><a href="/clients" class="active">Clients</a></li>
-          <li><a href="/render-nodes">Render Nodes</a></li>
         </ul>
       </nav>
       <div class="logout">
@@ -81,11 +80,13 @@
       <div class="grid-container">
         <!-- Sheep Clients Section -->
         <div class="clients-content">
-          <div class="actions">
+
+          <!-- add new lcients - deprecated -->
+          <!-- <div class="actions">
             <button id="addClientBtn" class="action-button">Add New Client</button>
-          </div>
-          
-          <div id="addClientForm" class="client-form hidden">
+          </div> -->
+
+          <!-- <div id="addClientForm" class="client-form hidden">
             <h2>Add New Client</h2>
             <form id="clientForm">
               <div class="form-group">
@@ -108,7 +109,7 @@
                 <button type="button" class="cancel-button" id="cancelBtn">Cancel</button>
               </div>
             </form>
-          </div>
+          </div> -->
           
           <div class="clients-grid">
             <h2>Sheep Clients</h2>
@@ -223,7 +224,7 @@
         const message = JSON.parse(event.data);
         
         if (message.type === 'clientsList') {
-          // Handle sheep clients update
+          // Only show connected render nodes as clients
           const clients = message.data;
           
           if (clients.length > 0) {
@@ -233,9 +234,9 @@
               const clientEl = document.createElement('div');
               clientEl.className = 'client-card';
               clientEl.innerHTML = `
-                <h3>${client.name}</h3>
-                <p>Breed: ${client.breed}</p>
-                <p>Age: ${client.age}</p>
+                <h3>${client.hostname}</h3>
+                <p>Files Rendered: ${client.files.length}</p>
+                <p>Status: ${client.isRendering ? 'Rendering' : 'Idle'}</p>
               `;
               clientsList.appendChild(clientEl);
             });
@@ -243,56 +244,11 @@
             clientsList.innerHTML = '<p class="no-data">No clients available</p>';
           }
         }
-        else if (message.type === 'nodesList') {
-          // Handle render nodes update
-          const nodes = message.data;
-          
-          if (nodes.length > 0) {
-            renderNodesList.innerHTML = '';
-            
-            nodes.forEach(node => {
-              const nodeEl = document.createElement('div');
-              nodeEl.className = 'node-card';
-              
-              // Determine status class
-              let statusClass = 'status-online';
-              if (node.isRendering) {
-                statusClass = 'status-rendering';
-              } else if (!node.isOnline) {
-                statusClass = 'status-offline';
-              }
-              
-              // Format files if available
-              let filesHtml = '';
-              if (node.files && node.files.length > 0) {
-                filesHtml = `
-                  <p>Files:</p>
-                  <ul>
-                    ${node.files.map(file => `<li>${file}</li>`).join('')}
-                  </ul>
-                `;
-              }
-              
-              nodeEl.innerHTML = `
-                <h3>${node.hostname}</h3>
-                <span class="node-status ${statusClass}">
-                  ${node.isRendering ? 'Rendering' : (node.isOnline ? 'Online' : 'Offline')}
-                </span>
-                <p>Last seen: ${new Date(node.lastSeen).toLocaleString()}</p>
-                ${filesHtml}
-                <p>Console output: <pre>${node.lastOutput || 'No output'}</pre></p>
-              `;
-              renderNodesList.appendChild(nodeEl);
-            });
-          } else {
-            renderNodesList.innerHTML = '<p class="no-data">No render nodes connected</p>';
-          }
-        }
       } catch (error) {
         console.error('Error handling message:', error);
       }
     };
-    
+
     // Request initial data
     socket.onopen = function() {
       socket.send(JSON.stringify({

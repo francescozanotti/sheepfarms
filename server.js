@@ -31,40 +31,98 @@ app.set('views', path.join(__dirname, 'views'));
 // Serve static files
 app.use(express.static(path.join(__dirname, 'public')));
 
+
+
+
+
 // Sample data (this would come from your database in a real app)
 const clients = [];
 
-// WebSocket connection handling
+const connectedClients = {}; // Store connected machines
+
 wss.on('connection', (ws) => {
-  console.log('Client connected');
-  
-  // Send current clients list on connection
-  ws.send(JSON.stringify({ type: 'clientsList', data: clients }));
-  
-  ws.on('message', (message) => {
-    try {
-      const parsedMessage = JSON.parse(message);
-      
-      if (parsedMessage.type === 'addClient') {
-        const newClient = parsedMessage.data;
-        clients.push(newClient);
-        
-        // Broadcast to all clients
-        wss.clients.forEach((client) => {
-          if (client.readyState === WebSocket.OPEN) {
-            client.send(JSON.stringify({ type: 'clientsList', data: clients }));
-          }
-        });
-      }
-    } catch (error) {
-      console.error('Error processing message:', error);
-    }
-  });
-  
-  ws.on('close', () => {
-    console.log('Client disconnected');
-  });
+    console.log('Render node connected');
+
+    // Listen for messages from the render node
+    ws.on('message', (message) => {
+        try {
+            const parsedMessage = JSON.parse(message);
+
+            if (parsedMessage.type === 'registerNode') {
+                const { hostname, files } = parsedMessage.data;
+                
+                // Store connected client data
+                connectedClients[hostname] = {
+                    hostname,
+                    files: files || [],
+                    isRendering: false,
+                    lastSeen: Date.now(),
+                    ws // Store WebSocket connection for tracking
+                };
+
+                console.log(`Node registered: ${hostname}`);
+
+                // Broadcast updated clients list
+                broadcastClients();
+            }
+
+            if (parsedMessage.type === 'renderingState') {
+                const { isRendering } = parsedMessage;
+                if (connectedClients[parsedMessage.hostname]) {
+                    connectedClients[parsedMessage.hostname].isRendering = isRendering;
+                }
+                broadcastClients();
+            }
+
+            if (parsedMessage.type === 'nodeStatus') {
+                const { hostname, isRendering, files } = parsedMessage.data;
+                if (connectedClients[hostname]) {
+                    connectedClients[hostname].isRendering = isRendering;
+                    connectedClients[hostname].files = files || [];
+                    connectedClients[hostname].lastSeen = Date.now();
+                }
+                broadcastClients();
+            }
+
+        } catch (error) {
+            console.error('Error processing WebSocket message:', error);
+        }
+    });
+
+    ws.on('close', () => {
+        // Remove disconnected client
+        for (const hostname in connectedClients) {
+            if (connectedClients[hostname].ws === ws) {
+                console.log(`Render node disconnected: ${hostname}`);
+                delete connectedClients[hostname];
+                broadcastClients();
+                break;
+            }
+        }
+    });
 });
+
+// Function to send the updated list of connected clients
+function broadcastClients() {
+    const activeClients = Object.values(connectedClients).map(client => ({
+        hostname: client.hostname,
+        files: client.files,
+        isRendering: client.isRendering,
+        lastSeen: client.lastSeen
+    }));
+
+    wss.clients.forEach((client) => {
+        if (client.readyState === WebSocket.OPEN) {
+            client.send(JSON.stringify({ type: 'clientsList', data: activeClients }));
+        }
+    });
+}
+
+
+
+
+
+
 
 // Routes
 app.get('/', (req, res) => {
