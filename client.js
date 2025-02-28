@@ -4,7 +4,7 @@ const { exec } = require('child_process');
 const fs = require('fs');
 
 // Directory to read
-const directoryPath = 'F:/assets/scripts/myrenderfarm/sequence1-10/';
+const directoryPath = 'C:/renderfarm/sequence1-10/';
 
 // Define the husk command
 const huskCommand = `"E:/Programmi3D/Houdini 20.5.278/bin/husk.exe" --output "F:/assets/scripts/myrenderfarm/sequence1-10/$F3.exr" --verbose 1 --frame 1 --frame-count 1 --renderer Karma "F:/assets/scripts/myrenderfarm/rop1.usd"`;
