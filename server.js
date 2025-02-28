@@ -104,19 +104,22 @@ wss.on('connection', (ws) => {
 
 // Function to send the updated list of connected clients
 function broadcastClients() {
-    const activeClients = Object.values(connectedClients).map(client => ({
-        hostname: client.hostname,
-        files: client.files,
-        isRendering: client.isRendering,
-        lastSeen: client.lastSeen
-    }));
+  const activeClients = Object.values(connectedClients).map(client => ({
+      hostname: client.hostname,
+      files: client.files,
+      isRendering: client.isRendering,
+      lastSeen: client.lastSeen
+  }));
 
-    wss.clients.forEach((client) => {
-        if (client.readyState === WebSocket.OPEN) {
-            client.send(JSON.stringify({ type: 'clientsList', data: activeClients }));
-        }
-    });
+  console.log("Broadcasting active clients:", activeClients); // Debugging line
+
+  wss.clients.forEach((client) => {
+      if (client.readyState === WebSocket.OPEN) {
+          client.send(JSON.stringify({ type: 'clientsList', data: activeClients }));
+      }
+  });
 }
+
 
 
 
