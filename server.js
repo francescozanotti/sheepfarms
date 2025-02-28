@@ -63,7 +63,8 @@ wss.on('connection', (ws) => {
                       message: `Another client.js instance is already running on ${hostname}`,
                       otherSessionId: sessionTracker[hostname]
                   }));
-              } else {
+              }
+              else {
                   // Register this machine with sessionId
                   sessionTracker[hostname] = sessionId;
               }
@@ -87,20 +88,23 @@ wss.on('connection', (ws) => {
           if (parsedMessage.type === 'renderingState') {
               const { sessionId, isRendering } = parsedMessage;
               if (connectedClients[sessionId]) {
-                  connectedClients[sessionId].isRendering = isRendering;
+                connectedClients[sessionId].isRendering = isRendering;
               }
               broadcastClients();
           }
 
           if (parsedMessage.type === 'nodeStatus') {
               const { hostname, sessionId, isRendering, files } = parsedMessage.data;
+          
               if (connectedClients[sessionId]) {
                   connectedClients[sessionId].isRendering = isRendering;
                   connectedClients[sessionId].files = files || [];
-                  connectedClients[sessionId].lastSeen = Date.now();
+                  connectedClients[sessionId].lastSeen = Date.now(); // ✅ Update lastSeen correctly
               }
-              broadcastClients();
+          
+              broadcastClients(); // ✅ Ensure UI gets the updated timestamp
           }
+        
 
       } catch (error) {
           console.error('Error processing WebSocket message:', error);
