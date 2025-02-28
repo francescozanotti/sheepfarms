@@ -39,73 +39,101 @@ app.use(express.static(path.join(__dirname, 'public')));
 const clients = [];
 
 const connectedClients = {}; // Store connected machines
+const sessionTracker = {}; // Track session IDs per hostname
+
 
 wss.on('connection', (ws) => {
-    console.log('Render node connected');
+  console.log('Render node connected');
 
-    // Listen for messages from the render node
-    ws.on('message', (message) => {
-        try {
-            const parsedMessage = JSON.parse(message);
+  ws.on('message', (message) => {
+      try {
+          const parsedMessage = JSON.parse(message);
 
-            if (parsedMessage.type === 'registerNode') {
-                const { hostname, files } = parsedMessage.data;
-                
-                // Store connected client data
-                connectedClients[hostname] = {
-                    hostname,
-                    files: files || [],
-                    isRendering: false,
-                    lastSeen: Date.now(),
-                    ws // Store WebSocket connection for tracking
-                };
+          if (parsedMessage.type === 'registerNode') {
+              const { hostname, sessionId, files } = parsedMessage.data;
 
-                console.log(`Node registered: ${hostname}`);
+              // Check if this hostname already has a registered session
+              if (sessionTracker[hostname]) {
+                  // A second instance is trying to register on the same machine
+                  console.warn(`⚠️ Multiple instances detected for ${hostname}: New sessionId=${sessionId}, Existing sessionId=${sessionTracker[hostname]}`);
 
-                // Broadcast updated clients list
-                broadcastClients();
-            }
+                  // Send warning message to the new connection
+                  ws.send(JSON.stringify({
+                      type: 'multipleInstancesWarning',
+                      message: `Another client.js instance is already running on ${hostname}`,
+                      otherSessionId: sessionTracker[hostname]
+                  }));
+              } else {
+                  // Register this machine with sessionId
+                  sessionTracker[hostname] = sessionId;
+              }
 
-            if (parsedMessage.type === 'renderingState') {
-                const { isRendering } = parsedMessage;
-                if (connectedClients[parsedMessage.hostname]) {
-                    connectedClients[parsedMessage.hostname].isRendering = isRendering;
-                }
-                broadcastClients();
-            }
+              // Store connected client info
+              connectedClients[sessionId] = {
+                  hostname,
+                  sessionId,
+                  files: files || [],
+                  isRendering: false,
+                  lastSeen: Date.now(),
+                  ws // Store WebSocket connection
+              };
 
-            if (parsedMessage.type === 'nodeStatus') {
-                const { hostname, isRendering, files } = parsedMessage.data;
-                if (connectedClients[hostname]) {
-                    connectedClients[hostname].isRendering = isRendering;
-                    connectedClients[hostname].files = files || [];
-                    connectedClients[hostname].lastSeen = Date.now();
-                }
-                broadcastClients();
-            }
+              console.log(`Node registered: ${hostname} (sessionId: ${sessionId})`);
 
-        } catch (error) {
-            console.error('Error processing WebSocket message:', error);
-        }
-    });
+              // Broadcast updated clients list
+              broadcastClients();
+          }
 
-    ws.on('close', () => {
-        // Remove disconnected client
-        for (const hostname in connectedClients) {
-            if (connectedClients[hostname].ws === ws) {
-                console.log(`Render node disconnected: ${hostname}`);
-                delete connectedClients[hostname];
-                broadcastClients();
-                break;
-            }
-        }
-    });
+          if (parsedMessage.type === 'renderingState') {
+              const { sessionId, isRendering } = parsedMessage;
+              if (connectedClients[sessionId]) {
+                  connectedClients[sessionId].isRendering = isRendering;
+              }
+              broadcastClients();
+          }
+
+          if (parsedMessage.type === 'nodeStatus') {
+              const { hostname, sessionId, isRendering, files } = parsedMessage.data;
+              if (connectedClients[sessionId]) {
+                  connectedClients[sessionId].isRendering = isRendering;
+                  connectedClients[sessionId].files = files || [];
+                  connectedClients[sessionId].lastSeen = Date.now();
+              }
+              broadcastClients();
+          }
+
+      } catch (error) {
+          console.error('Error processing WebSocket message:', error);
+      }
+  });
+
+  ws.on('close', () => {
+      // Remove disconnected client
+      for (const sessionId in connectedClients) {
+          if (connectedClients[sessionId].ws === ws) {
+              console.log(`Render node disconnected: ${connectedClients[sessionId].hostname} (sessionId: ${sessionId})`);
+              
+              // Remove from session tracker
+              delete sessionTracker[connectedClients[sessionId].hostname];
+
+              // Remove from connected clients
+              delete connectedClients[sessionId];
+
+              broadcastClients();
+              break;
+          }
+      }
+  });
 });
+
+
+
 
 // Function to send the updated list of connected clients
 function broadcastClients() {
   const activeClients = Object.values(connectedClients).map(client => ({
       hostname: client.hostname,
+      sessionId: client.sessionId,
       files: client.files,
       isRendering: client.isRendering,
       lastSeen: client.lastSeen
@@ -119,6 +147,7 @@ function broadcastClients() {
       }
   });
 }
+
 
 
 
