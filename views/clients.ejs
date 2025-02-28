@@ -80,6 +80,37 @@
       <div class="grid-container">
         <!-- Sheep Clients Section -->
         <div class="clients-content">
+
+          <!-- add new lcients - deprecated -->
+          <!-- <div class="actions">
+            <button id="addClientBtn" class="action-button">Add New Client</button>
+          </div> -->
+
+          <!-- <div id="addClientForm" class="client-form hidden">
+            <h2>Add New Client</h2>
+            <form id="clientForm">
+              <div class="form-group">
+                <label for="name">Name:</label>
+                <input type="text" id="name" name="name" required>
+              </div>
+              
+              <div class="form-group">
+                <label for="breed">Breed:</label>
+                <input type="text" id="breed" name="breed" required>
+              </div>
+              
+              <div class="form-group">
+                <label for="age">Age:</label>
+                <input type="number" id="age" name="age" min="0" max="20" required>
+              </div>
+              
+              <div class="form-actions">
+                <button type="submit" class="save-button">Save</button>
+                <button type="button" class="cancel-button" id="cancelBtn">Cancel</button>
+              </div>
+            </form>
+          </div> -->
+          
           <div class="clients-grid">
             <h2>Sheep Clients</h2>
             <div id="clientsList" class="grid">
@@ -119,6 +150,11 @@
   </div>
   
   <script>
+    // DOM elements
+    // const addClientBtn = document.getElementById('addClientBtn');
+    // const addClientForm = document.getElementById('addClientForm');
+    // const cancelBtn = document.getElementById('cancelBtn');
+    // const clientForm = document.getElementById('clientForm');
     const clientsList = document.getElementById('clientsList');
     const renderNodesList = document.getElementById('renderNodesList');
     const refreshNodesBtn = document.getElementById('refreshNodesBtn');
@@ -128,6 +164,40 @@
     // Connect WebSocket
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
     const socket = new WebSocket(`${protocol}//${window.location.host}`);
+    
+    // Show/hide form
+    // addClientBtn.addEventListener('click', () => {
+    //   addClientForm.classList.remove('hidden');
+    // });
+    
+    // cancelBtn.addEventListener('click', () => {
+    //   addClientForm.classList.add('hidden');
+    //   clientForm.reset();
+    // });
+    
+    // // Handle form submission
+    // clientForm.addEventListener('submit', (e) => {
+    //   e.preventDefault();
+      
+    //   const newClient = {
+    //     id: Date.now().toString(),
+    //     name: document.getElementById('name').value,
+    //     breed: document.getElementById('breed').value,
+    //     age: parseInt(document.getElementById('age').value)
+    //   };
+      
+    //   // Send to server via WebSocket
+    //   socket.send(JSON.stringify({
+    //     type: 'addClient',
+    //     data: newClient
+    //   }));
+      
+    //   // Reset and hide form
+    //   clientForm.reset();
+    //   addClientForm.classList.add('hidden');
+    // });
+    
+
 
     // Handle render node actions
     refreshNodesBtn.addEventListener('click', () => {
@@ -151,40 +221,36 @@
     });
     
     // WebSocket message handling
-    socket.onmessage = function(event) {
-      try {
-        const message = JSON.parse(event.data);
+socket.onmessage = function(event) {
+  try {
+    const message = JSON.parse(event.data);
 
-        if (message.type === 'clientsList') {
-          console.log("Received updated client list:", message.data); // Debugging line
+    if (message.type === 'clientsList') {
+      console.log("Received updated client list:", message.data); // Debugging line
+      const clients = message.data;
+      
+      clientsList.innerHTML = ''; // Clear the list
 
-          message.data.forEach(client => {
-            const existingClientEl = document.getElementById(`client-${client.sessionId}`);
-
-            if (existingClientEl) {
-              // ✅ Update only the Last Seen timestamp dynamically
-              document.getElementById(`lastSeen-${client.sessionId}`).innerText = new Date(client.lastSeen).toLocaleString();
-            } else {
-              // ✅ Create a new client entry if it doesn't exist
-              const clientEl = document.createElement('div');
-              clientEl.className = 'client-card';
-              clientEl.id = `client-${client.sessionId}`; // Assign an ID for updates
-
-              clientEl.innerHTML = `
-                <h3>${client.hostname}</h3>
-                <p>Files Rendered: ${client.files.length}</p>
-                <p>Status: ${client.isRendering ? 'Rendering' : 'Idle'}</p>
-                <p>Last Seen: <span id="lastSeen-${client.sessionId}">${new Date(client.lastSeen).toLocaleString()}</span></p>
-              `;
-
-              clientsList.appendChild(clientEl);
-            }
-          });
-        }
-      } catch (error) {
-        console.error('Error handling message:', error);
+      if (clients.length > 0) {
+        clients.forEach(client => {
+          const clientEl = document.createElement('div');
+          clientEl.className = 'client-card';
+          clientEl.innerHTML = `
+            <h3>${client.hostname}</h3>
+            <p>Files Rendered: ${client.files.length}</p>
+            <p>Status: ${client.isRendering ? 'Rendering' : 'Idle'}</p>
+            <p>Last Seen: ${new Date(client.lastSeen).toLocaleString()}</p>
+          `;
+          clientsList.appendChild(clientEl);
+        });
+      } else {
+        clientsList.innerHTML = '<p class="no-data">No connected machines</p>';
       }
-    };
+    }
+  } catch (error) {
+    console.error('Error handling message:', error);
+  }
+};
 
 
     // Request initial data
@@ -201,7 +267,6 @@
     socket.onerror = function(error) {
       console.error('WebSocket error:', error);
     };
-
   </script>
 </body>
 </html>
