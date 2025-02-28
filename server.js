@@ -102,6 +102,29 @@ wss.on('connection', (ws) => {
               broadcastClients();
           }
 
+          if (parsedMessage.type === 'syncRequest') {
+            console.log("🔄 Sync requested by user. Broadcasting to all clients...");
+
+            wss.clients.forEach((client) => {
+                if (client.readyState === WebSocket.OPEN) {
+                    client.send(JSON.stringify({ type: 'syncFolder' }));
+                }
+            });
+          }
+
+          if (parsedMessage.type === 'syncStatus') {
+            const { hostname, isSynced } = parsedMessage.data;
+        
+            if (connectedClients[hostname]) {
+                connectedClients[hostname].isSynced = isSynced;
+            }
+        
+            console.log(`🔄 Sync status updated: ${hostname} - Synced: ${isSynced}`);
+        
+            broadcastClients(); // Ensure UI updates
+          }
+        
+
       } catch (error) {
           console.error('Error processing WebSocket message:', error);
       }

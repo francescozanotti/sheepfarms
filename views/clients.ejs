@@ -132,7 +132,7 @@
         <!-- Render Nodes Section -->
         <div class="render-nodes">
           <div class="actions">
-            <button id="refreshNodesBtn" class="action-button">Refresh Nodes</button>
+            <button id="syncClientsBtn" class="action-button">Sync Folders</button>
             <button id="startRenderBtn" class="action-button">Start Rendering</button>
             <button id="stopRenderBtn" class="action-button">Stop Rendering</button>
           </div>
@@ -150,14 +150,10 @@
   </div>
   
   <script>
-    // DOM elements
-    // const addClientBtn = document.getElementById('addClientBtn');
-    // const addClientForm = document.getElementById('addClientForm');
-    // const cancelBtn = document.getElementById('cancelBtn');
-    // const clientForm = document.getElementById('clientForm');
     const clientsList = document.getElementById('clientsList');
     const renderNodesList = document.getElementById('renderNodesList');
-    const refreshNodesBtn = document.getElementById('refreshNodesBtn');
+
+    const syncClientsBtn = document.getElementById('syncClientsBtn');
     const startRenderBtn = document.getElementById('startRenderBtn');
     const stopRenderBtn = document.getElementById('stopRenderBtn');
     
@@ -165,47 +161,13 @@
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
     const socket = new WebSocket(`${protocol}//${window.location.host}`);
     
-    // Show/hide form
-    // addClientBtn.addEventListener('click', () => {
-    //   addClientForm.classList.remove('hidden');
-    // });
-    
-    // cancelBtn.addEventListener('click', () => {
-    //   addClientForm.classList.add('hidden');
-    //   clientForm.reset();
-    // });
-    
-    // // Handle form submission
-    // clientForm.addEventListener('submit', (e) => {
-    //   e.preventDefault();
-      
-    //   const newClient = {
-    //     id: Date.now().toString(),
-    //     name: document.getElementById('name').value,
-    //     breed: document.getElementById('breed').value,
-    //     age: parseInt(document.getElementById('age').value)
-    //   };
-      
-    //   // Send to server via WebSocket
-    //   socket.send(JSON.stringify({
-    //     type: 'addClient',
-    //     data: newClient
-    //   }));
-      
-    //   // Reset and hide form
-    //   clientForm.reset();
-    //   addClientForm.classList.add('hidden');
-    // });
-    
-
-
     // Handle render node actions
-    refreshNodesBtn.addEventListener('click', () => {
-      socket.send(JSON.stringify({
-        type: 'getNodes'
-      }));
+    syncClientsBtn.addEventListener('click', () => {
+        socket.send(JSON.stringify({
+            type: 'syncRequest'
+        }));
     });
-    
+
     startRenderBtn.addEventListener('click', () => {
       socket.send(JSON.stringify({
         type: 'renderingState',
@@ -221,36 +183,42 @@
     });
     
     // WebSocket message handling
-socket.onmessage = function(event) {
-  try {
-    const message = JSON.parse(event.data);
+    socket.onmessage = function(event) {
+        try {
+            const message = JSON.parse(event.data);
 
-    if (message.type === 'clientsList') {
-      console.log("Received updated client list:", message.data); // Debugging line
-      const clients = message.data;
-      
-      clientsList.innerHTML = ''; // Clear the list
+            if (message.type === 'clientsList') {
+                console.log("Received updated client list:", message.data);
 
-      if (clients.length > 0) {
-        clients.forEach(client => {
-          const clientEl = document.createElement('div');
-          clientEl.className = 'client-card';
-          clientEl.innerHTML = `
-            <h3>${client.hostname}</h3>
-            <p>Files Rendered: ${client.files.length}</p>
-            <p>Status: ${client.isRendering ? 'Rendering' : 'Idle'}</p>
-            <p>Last Seen: ${new Date(client.lastSeen).toLocaleString()}</p>
-          `;
-          clientsList.appendChild(clientEl);
-        });
-      } else {
-        clientsList.innerHTML = '<p class="no-data">No connected machines</p>';
-      }
-    }
-  } catch (error) {
-    console.error('Error handling message:', error);
-  }
-};
+                clientsList.innerHTML = '';
+
+                if (message.data.length > 0) {
+                    message.data.forEach(client => {
+                        const clientEl = document.createElement('div');
+                        clientEl.className = 'client-card';
+
+                        let syncClass = client.isSynced ? 'status-synced' : 'status-not-synced';
+
+                        clientEl.innerHTML = `
+                          <h3>${client.hostname}</h3>
+                          <p>Files Rendered: ${client.files.length}</p>
+                          <p>Status: ${client.isRendering ? 'Rendering' : 'Idle'}</p>
+                          <p>Last Seen: ${new Date(client.lastSeen).toLocaleString()}</p>
+                          <p class="${syncClass}">${client.isSynced ? 'Synced ✅' : 'Not Synced ❌'}</p>
+                        `;
+
+                        clientsList.appendChild(clientEl);
+                    });
+                }
+                else {
+                    clientsList.innerHTML = '<p class="no-data">No connected machines</p>';
+                }
+            }
+        }
+        catch (error) {
+            console.error('Error handling message:', error);
+        }
+    };
 
 
     // Request initial data
@@ -264,6 +232,7 @@ socket.onmessage = function(event) {
       }));
     };
     
+
     socket.onerror = function(error) {
       console.error('WebSocket error:', error);
     };
