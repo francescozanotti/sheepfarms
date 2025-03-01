@@ -50,7 +50,7 @@ wss.on('connection', (ws) => {
           const parsedMessage = JSON.parse(message);
 
           if (parsedMessage.type === 'registerNode') {
-              const { hostname, sessionId, files, isSynced } = parsedMessage.data;
+              const { hostname, sessionId, files } = parsedMessage.data;
 
               // Check if this hostname already has a registered session
               if (sessionTracker[hostname]) {
@@ -75,13 +75,17 @@ wss.on('connection', (ws) => {
                   files: files || [],
                   isRendering: false,
                   lastSeen: Date.now(),
+<<<<<<< HEAD
                   isSynced: isSynced
+=======
+                  ws // Store WebSocket connection
+>>>>>>> parent of f1b7e93 (trying to update sync status. working in sync until now but sync status not updating)
               };
 
-              console.log(`Node registered: ${hostname} (sessionId: ${sessionId}, Synced: ${isSynced})`);
+              console.log(`Node registered: ${hostname} (sessionId: ${sessionId})`);
 
+              // Broadcast updated clients list
               broadcastClients();
-
           }
 
           if (parsedMessage.type === 'renderingState') {
@@ -113,18 +117,15 @@ wss.on('connection', (ws) => {
           }
 
           if (parsedMessage.type === 'syncStatus') {
-              const { hostname, isSynced } = parsedMessage.data;
+            const { hostname, isSynced } = parsedMessage.data;
         
-              // Find the correct client by hostname
-              Object.values(connectedClients).forEach(client => {
-                  if (client.hostname === hostname) {
-                      client.isSynced = isSynced;  // ✅ Update sync status
-                  }
-              });
+            if (connectedClients[hostname]) {
+                connectedClients[hostname].isSynced = isSynced;
+            }
         
-              console.log(`🔄 Sync status updated: ${hostname} - Synced: ${isSynced}`);
+            console.log(`🔄 Sync status updated: ${hostname} - Synced: ${isSynced}`);
         
-              broadcastClients(); // Ensure UI updates
+            broadcastClients(); // Ensure UI updates
           }
         
 
