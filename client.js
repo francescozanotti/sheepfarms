@@ -91,9 +91,6 @@ function connect() {
         // Read existing files
         const files = await getRenderedFiles();
 
-        // Check if the folder exists
-        const isSynced = fs.existsSync(directoryPath);
-
         // Register this node with the server, including the sessionId
         // Send initial registration, including sync status
         ws.send(JSON.stringify({
