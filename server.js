@@ -152,34 +152,15 @@ wss.on('connection', (ws) => {
 
 
 
-// Hardcoded machine descriptions and Houdini versions
-const machineDetails = {
-  "POPPI": { description: "Main Client", houdiniVersions: ["Houdini 20.5.278", "Houdini 19.5.534"] },
-  "WorkLaptopAndrea": { description: "Work Laptop Andrea", houdiniVersions: ["Houdini 20.0.460"] },
-  "WorkLaptopAlex": { description: "Work Laptop Alex", houdiniVersions: ["Houdini 19.5.303", "Houdini 18.5.672"] },
-};
-
-// Fallback for unknown machines
-function getMachineDetails(hostname) {
-  return machineDetails[hostname] || { description: "Unknown Device", houdiniVersions: [] };
-}
-
 // Function to send the updated list of connected clients
 function broadcastClients() {
-  const activeClients = Object.values(connectedClients).map(client => {
-      const machineInfo = getMachineDetails(client.hostname);
-      
-      return {
-          hostname: client.hostname,
-          sessionId: client.sessionId,
-          files: client.files,
-          isRendering: client.isRendering,
-          lastSeen: client.lastSeen,
-          isSynced: client.isSynced,
-          description: machineInfo.description, // ✅ New field
-          houdiniVersions: machineInfo.houdiniVersions, // ✅ New field
-      };
-  });
+  const activeClients = Object.values(connectedClients).map(client => ({
+      hostname: client.hostname,
+      sessionId: client.sessionId,
+      files: client.files,
+      isRendering: client.isRendering,
+      lastSeen: client.lastSeen
+  }));
 
   console.log("Broadcasting active clients:", activeClients); // Debugging line
 
