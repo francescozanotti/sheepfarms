@@ -16,10 +16,9 @@ const wss = new WebSocket.Server({ server });
 app.use(session({
   secret: 'your-secret-key',
   resave: false,
-  saveUninitialized: false, // ✅ Only create session when needed
-  cookie: { secure: false, httpOnly: true } // ✅ Prevent JavaScript access to session cookies
+  saveUninitialized: true,
+  cookie: { secure: false } // Set to true in production with HTTPS
 }));
-
 
 // Parse request bodies
 app.use(bodyParser.urlencoded({ extended: false }));
@@ -104,6 +103,29 @@ wss.on('connection', (ws) => {
               broadcastClients();
           }
 
+          if (parsedMessage.type === 'syncRequest') {
+            console.log("🔄 Sync requested by user. Broadcasting to all clients...");
+
+            wss.clients.forEach((client) => {
+                if (client.readyState === WebSocket.OPEN) {
+                    client.send(JSON.stringify({ type: 'syncFolder' }));
+                }
+            });
+          }
+
+          if (parsedMessage.type === 'syncStatus') {
+            const { hostname, isSynced } = parsedMessage.data;
+        
+            if (connectedClients[hostname]) {
+                connectedClients[hostname].isSynced = isSynced;
+            }
+        
+            console.log(`🔄 Sync status updated: ${hostname} - Synced: ${isSynced}`);
+        
+            broadcastClients(); // Ensure UI updates
+          }
+        
+
       } catch (error) {
           console.error('Error processing WebSocket message:', error);
       }
@@ -131,16 +153,36 @@ wss.on('connection', (ws) => {
 
 
 
+// Hardcoded machine descriptions and Houdini versions
+const machineDetails = {
+  "POPPI": { description: "Main Client", houdiniVersions: ["Houdini 20.5.278", "Houdini 19.5.534"] },
+  "WorkLaptopAndrea": { description: "Work Laptop Andrea", houdiniVersions: ["Houdini 20.0.460"] },
+  "WorkLaptopAlex": { description: "Work Laptop Alex", houdiniVersions: ["Houdini 19.5.303", "Houdini 18.5.672"] },
+};
+
+// Fallback for unknown machines
+function getMachineDetails(hostname) {
+  return machineDetails[hostname] || { description: "Unknown Device", houdiniVersions: [] };
+}
+
 // Function to send the updated list of connected clients
 function broadcastClients() {
-  const activeClients = Object.values(connectedClients).map(client => ({
-      hostname: client.hostname,
-      sessionId: client.sessionId,
-      files: client.files,
-      isRendering: client.isRendering,
-      lastSeen: client.lastSeen,
-      isSynced: isSynced
-  }));
+
+  const activeClients = Object.values(connectedClients).map(client => {
+      const machineInfo = getMachineDetails(client.hostname);
+      
+      return {
+          hostname: client.hostname,
+          sessionId: client.sessionId,
+          files: client.files,
+          isRendering: client.isRendering,
+          lastSeen: client.lastSeen,
+          isSynced: client.isSynced,
+          description: machineInfo.description, // ✅ New field
+          houdiniVersions: machineInfo.houdiniVersions, // ✅ New field
+      };
+  });
+
 
   console.log("Broadcasting active clients:", activeClients); // Debugging line
 
@@ -150,11 +192,6 @@ function broadcastClients() {
       }
   });
 }
-
-
-
-
-
 
 
 
@@ -176,7 +213,7 @@ app.post('/login', (req, res) => {
   if (username === 'admin' && password === 'password') {
     req.session.isLoggedIn = true;
     req.session.username = username;
-    console.log('Login successful, session:', req.session);
+    console.log('Login successful, redirecting to dashboard');
     return res.redirect('/dashboard');
   } else {
     console.log('Login failed');
@@ -188,7 +225,7 @@ app.get('/dashboard', (req, res) => {
   if (!req.session.isLoggedIn) {
     return res.redirect('/');
   }
-  console.log('Rendering dashboard for:', req.session.username);
+  
   res.render('dashboard', { username: req.session.username });
 });
 
