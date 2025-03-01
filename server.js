@@ -75,7 +75,7 @@ wss.on('connection', (ws) => {
                   files: files || [],
                   isRendering: false,
                   lastSeen: Date.now(),
-                  isSynced: isSynced,
+                  // isSynced: isSynced,
                   ws //store websocket for some reason
               };
 
