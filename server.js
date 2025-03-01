@@ -76,7 +76,11 @@ wss.on('connection', (ws) => {
                   isRendering: false,
                   lastSeen: Date.now(),
 <<<<<<< HEAD
+<<<<<<< HEAD
                   isSynced: isSynced
+=======
+                  ws // Store WebSocket connection
+>>>>>>> parent of f1b7e93 (trying to update sync status. working in sync until now but sync status not updating)
 =======
                   ws // Store WebSocket connection
 >>>>>>> parent of f1b7e93 (trying to update sync status. working in sync until now but sync status not updating)
