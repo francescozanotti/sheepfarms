@@ -120,6 +120,9 @@ function connect() {
                     console.log(`✅ Folder created: ${directoryPath}`);
                 } else {
                     console.log(`✅ Folder already exists.`);
+                    // send or receive files here
+                    //
+                    //
                 }
     
                 // Send sync status back to the server
