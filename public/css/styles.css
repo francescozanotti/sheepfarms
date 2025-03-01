@@ -319,16 +319,3 @@ header h1 {
 .hidden {
   display: none;
 }
-
-/* sync button */
-.status-synced {
-  background-color: #cce5ff; /* Light blue */
-  padding: 5px;
-  border-radius: 4px;
-}
-/* sync button */
-.status-not-synced {
-  background-color: #f8d7da; /* Light red */
-  padding: 5px;
-  border-radius: 4px;
-}

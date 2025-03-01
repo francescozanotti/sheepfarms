@@ -26,18 +26,16 @@ const sessionId = Date.now();
 
 // Get list of files in the render directory
 function getRenderedFiles() {
-    return new Promise((resolve) => {
+    return new Promise((resolve, reject) => {
         fs.readdir(directoryPath, (err, files) => {
             if (err) {
-                console.warn(`⚠️ Directory not found: ${directoryPath}. Reporting empty file list.`);
-                resolve([]); // Instead of rejecting, return an empty list
+                reject(err);
                 return;
             }
             resolve(files);
         });
     });
 }
-
 
 
 // Send node status update to server
@@ -111,27 +109,6 @@ function connect() {
             if (data.type === 'multipleInstancesWarning') {
                 console.warn(`⚠️ WARNING: Another client.js instance is already running on ${hostname} (sessionId: ${data.otherSessionId})`);
             }
-
-            if (data.type === 'syncFolder') {
-                console.log(`🔄 Sync request received. Checking folder: ${directoryPath}`);
-    
-                if (!fs.existsSync(directoryPath)) {
-                    fs.mkdirSync(directoryPath, { recursive: true });
-                    console.log(`✅ Folder created: ${directoryPath}`);
-                } else {
-                    console.log(`✅ Folder already exists.`);
-                }
-    
-                // Send sync status back to the server
-                ws.send(JSON.stringify({
-                    type: 'syncStatus',
-                    data: {
-                        hostname: hostname,
-                        isSynced: true
-                    }
-                }));
-            }
-
         } catch (error) {
             console.error('Error parsing message:', error);
         }

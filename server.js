@@ -16,9 +16,10 @@ const wss = new WebSocket.Server({ server });
 app.use(session({
   secret: 'your-secret-key',
   resave: false,
-  saveUninitialized: true,
-  cookie: { secure: false } // Set to true in production with HTTPS
+  saveUninitialized: false, // ✅ Only create session when needed
+  cookie: { secure: false, httpOnly: true } // ✅ Prevent JavaScript access to session cookies
 }));
+
 
 // Parse request bodies
 app.use(bodyParser.urlencoded({ extended: false }));
@@ -103,29 +104,6 @@ wss.on('connection', (ws) => {
               broadcastClients();
           }
 
-          if (parsedMessage.type === 'syncRequest') {
-            console.log("🔄 Sync requested by user. Broadcasting to all clients...");
-
-            wss.clients.forEach((client) => {
-                if (client.readyState === WebSocket.OPEN) {
-                    client.send(JSON.stringify({ type: 'syncFolder' }));
-                }
-            });
-          }
-
-          if (parsedMessage.type === 'syncStatus') {
-            const { hostname, isSynced } = parsedMessage.data;
-        
-            if (connectedClients[hostname]) {
-                connectedClients[hostname].isSynced = isSynced;
-            }
-        
-            console.log(`🔄 Sync status updated: ${hostname} - Synced: ${isSynced}`);
-        
-            broadcastClients(); // Ensure UI updates
-          }
-        
-
       } catch (error) {
           console.error('Error processing WebSocket message:', error);
       }
@@ -198,7 +176,7 @@ app.post('/login', (req, res) => {
   if (username === 'admin' && password === 'password') {
     req.session.isLoggedIn = true;
     req.session.username = username;
-    console.log('Login successful, redirecting to dashboard');
+    console.log('Login successful, session:', req.session);
     return res.redirect('/dashboard');
   } else {
     console.log('Login failed');
@@ -210,7 +188,7 @@ app.get('/dashboard', (req, res) => {
   if (!req.session.isLoggedIn) {
     return res.redirect('/');
   }
-  
+  console.log('Rendering dashboard for:', req.session.username);
   res.render('dashboard', { username: req.session.username });
 });
 
