@@ -190,6 +190,7 @@
             if (message.type === 'clientsList') {
                 console.log("Received updated client list:", message.data);
 
+<<<<<<< HEAD
                 clientsList.innerHTML = '';
 
                 if (message.data.length > 0) {
@@ -218,6 +219,28 @@
                             <p><strong>Houdini Versions:</strong> ${houdiniList}</p>
                             <p class="${syncClass}">${client.isSynced ? 'Synced ✅' : 'Not Synced ❌'}</p>
                         `;
+=======
+      if (clients.length > 0) {
+        clients.forEach(client => {
+          const clientEl = document.createElement('div');
+          clientEl.className = 'client-card';
+          clientEl.innerHTML = `
+            <h3>${client.hostname}</h3>
+            <p>Files Rendered: ${client.files.length}</p>
+            <p>Status: ${client.isRendering ? 'Rendering' : 'Idle'}</p>
+            <p>Last Seen: ${new Date(client.lastSeen).toLocaleString()}</p>
+          `;
+          clientsList.appendChild(clientEl);
+        });
+      } else {
+        clientsList.innerHTML = '<p class="no-data">No connected machines</p>';
+      }
+    }
+  } catch (error) {
+    console.error('Error handling message:', error);
+  }
+};
+>>>>>>> parent of f3ddf15 (Update clients.ejs)
 
                         clientsList.appendChild(clientEl);
 
