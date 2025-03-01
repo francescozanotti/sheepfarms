@@ -75,19 +75,7 @@ wss.on('connection', (ws) => {
                   files: files || [],
                   isRendering: false,
                   lastSeen: Date.now(),
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-                  isSynced: isSynced
-=======
-                  ws // Store WebSocket connection
->>>>>>> parent of f1b7e93 (trying to update sync status. working in sync until now but sync status not updating)
-=======
-                  ws // Store WebSocket connection
->>>>>>> parent of f1b7e93 (trying to update sync status. working in sync until now but sync status not updating)
-=======
-                  ws // Store WebSocket connection
->>>>>>> parent of f1b7e93 (trying to update sync status. working in sync until now but sync status not updating)
+                  ws //store websocket for some reason
               };
 
               console.log(`Node registered: ${hostname} (sessionId: ${sessionId})`);
