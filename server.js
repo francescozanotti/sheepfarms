@@ -15,10 +15,10 @@ const wss = new WebSocket.Server({ server });
 
 // Configure session middleware
 app.use(session({
-  secret: 'your-secret-key',
+  secret: 'sheepfarm-secret',
   resave: false,
   saveUninitialized: true,
-  cookie: { secure: false } // Set to true in production with HTTPS
+  cookie: { secure: true } // Set to true in production with HTTPS
 }));
 
 // Parse request bodies
