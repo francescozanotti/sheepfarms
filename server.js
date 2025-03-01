@@ -155,9 +155,9 @@ wss.on('connection', (ws) => {
 
 // Hardcoded machine descriptions and Houdini versions
 const machineDetails = {
-  "POPPI": { description: "Main Client", houdiniVersions: ["E:/Programmi3D/Houdini 20.5.278/", "E:/Programmi3D/Houdini 19.5.368/"] },
-  "DESKTOP-367E3PH": { description: "Work Laptop Andrea", houdiniVersions: ["C:/Program Files/Houdini 18.5.351/"] },
-  "WorkLaptopAlex": { description: "Work Laptop Alex", houdiniVersions: ["none"] },
+  "POPPI": { description: "Main Client", houdiniVersions: ["Houdini 20.5.278", "Houdini 19.5.534"] },
+  "WorkLaptopAndrea": { description: "Work Laptop Andrea", houdiniVersions: ["Houdini 20.0.460"] },
+  "WorkLaptopAlex": { description: "Work Laptop Alex", houdiniVersions: ["Houdini 19.5.303", "Houdini 18.5.672"] },
 };
 
 // Fallback for unknown machines
