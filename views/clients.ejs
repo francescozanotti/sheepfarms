@@ -200,17 +200,16 @@
                         let syncClass = client.isSynced ? 'status-synced' : 'status-not-synced';
 
                         clientEl.innerHTML = `
-                          <h3>${client.hostname}</h3>
-                          <p>Files Rendered: ${client.files.length}</p>
-                          <p>Status: ${client.isRendering ? 'Rendering' : 'Idle'}</p>
-                          <p>Last Seen: ${new Date(client.lastSeen).toLocaleString()}</p>
-                          <p class="${syncClass}">${client.isSynced ? 'Synced ✅' : 'Not Synced ❌'}</p>
+                            <h3>${client.hostname}</h3>
+                            <p>Files Rendered: ${client.files.length}</p>
+                            <p>Status: ${client.isRendering ? 'Rendering' : 'Idle'}</p>
+                            <p>Last Seen: ${new Date(client.lastSeen).toLocaleString()}</p>
+                            <p class="${syncClass}">${client.isSynced ? 'Synced ✅' : 'Not Synced ❌'}</p>
                         `;
 
                         clientsList.appendChild(clientEl);
                     });
-                }
-                else {
+                } else {
                     clientsList.innerHTML = '<p class="no-data">No connected machines</p>';
                 }
             }
@@ -219,6 +218,7 @@
             console.error('Error handling message:', error);
         }
     };
+
 
 
     // Request initial data

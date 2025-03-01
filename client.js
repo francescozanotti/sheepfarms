@@ -92,12 +92,14 @@ function connect() {
         const files = await getRenderedFiles();
 
         // Register this node with the server, including the sessionId
+        // Send initial registration, including sync status
         ws.send(JSON.stringify({
             type: 'registerNode',
             data: {
                 hostname: hostname,
-                sessionId: sessionId,  // Send unique session ID
-                files: files
+                sessionId: sessionId,
+                files: await getRenderedFiles(),
+                isSynced: isSynced  // ✅ Send sync status immediately
             }
         }));
     });

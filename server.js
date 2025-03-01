@@ -50,7 +50,7 @@ wss.on('connection', (ws) => {
           const parsedMessage = JSON.parse(message);
 
           if (parsedMessage.type === 'registerNode') {
-              const { hostname, sessionId, files } = parsedMessage.data;
+              const { hostname, sessionId, files, isSynced } = parsedMessage.data;
 
               // Check if this hostname already has a registered session
               if (sessionTracker[hostname]) {
@@ -75,13 +75,14 @@ wss.on('connection', (ws) => {
                   files: files || [],
                   isRendering: false,
                   lastSeen: Date.now(),
-                  ws // Store WebSocket connection
+                  isSynced: isSynced,  // ✅ Store sync status
+                  ws
               };
 
-              console.log(`Node registered: ${hostname} (sessionId: ${sessionId})`);
+              console.log(`Node registered: ${hostname} (sessionId: ${sessionId}, Synced: ${isSynced})`);
 
-              // Broadcast updated clients list
               broadcastClients();
+
           }
 
           if (parsedMessage.type === 'renderingState') {
@@ -113,15 +114,18 @@ wss.on('connection', (ws) => {
           }
 
           if (parsedMessage.type === 'syncStatus') {
-            const { hostname, isSynced } = parsedMessage.data;
+              const { hostname, isSynced } = parsedMessage.data;
         
-            if (connectedClients[hostname]) {
-                connectedClients[hostname].isSynced = isSynced;
-            }
+              // Find the correct client by hostname
+              Object.values(connectedClients).forEach(client => {
+                  if (client.hostname === hostname) {
+                      client.isSynced = isSynced;  // ✅ Update sync status
+                  }
+              });
         
-            console.log(`🔄 Sync status updated: ${hostname} - Synced: ${isSynced}`);
+              console.log(`🔄 Sync status updated: ${hostname} - Synced: ${isSynced}`);
         
-            broadcastClients(); // Ensure UI updates
+              broadcastClients(); // Ensure UI updates
           }
         
 
