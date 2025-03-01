@@ -14,11 +14,12 @@ const wss = new WebSocket.Server({ server });
 
 // Configure session middleware
 app.use(session({
-  secret: 'sheepfarm-secret',
+  secret: 'your-secret-key',
   resave: false,
-  saveUninitialized: true,
-  cookie: { secure: true } // Set to true in production with HTTPS
+  saveUninitialized: false, // ✅ Only create session when needed
+  cookie: { secure: false, httpOnly: true } // ✅ Prevent JavaScript access to session cookies
 }));
+
 
 // Parse request bodies
 app.use(bodyParser.urlencoded({ extended: false }));
@@ -173,7 +174,7 @@ app.post('/login', (req, res) => {
   if (username === 'admin' && password === 'password') {
     req.session.isLoggedIn = true;
     req.session.username = username;
-    console.log('Login successful, redirecting to dashboard');
+    console.log('Login successful, session:', req.session);
     return res.redirect('/dashboard');
   } else {
     console.log('Login failed');
@@ -185,7 +186,7 @@ app.get('/dashboard', (req, res) => {
   if (!req.session.isLoggedIn) {
     return res.redirect('/');
   }
-  
+  console.log('Rendering dashboard for:', req.session.username);
   res.render('dashboard', { username: req.session.username });
 });
 
