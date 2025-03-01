@@ -198,7 +198,7 @@
                         clientEl.className = 'client-card';
 
                         let syncClass = client.isSynced ? 'status-synced' : 'status-not-synced';
-
+                        console.log('client isSynced? :', client.isSynced);
                         clientEl.innerHTML = `
                             <h3>${client.hostname}</h3>
                             <p>Files Rendered: ${client.files.length}</p>
