@@ -75,7 +75,8 @@ wss.on('connection', (ws) => {
                   files: files || [],
                   isRendering: false,
                   lastSeen: Date.now(),
-                  ws // Store WebSocket connection
+                  isSynced: isSynced,
+                  ws //store websocket for some reason
               };
 
               console.log(`Node registered: ${hostname} (sessionId: ${sessionId})`);
@@ -166,6 +167,7 @@ function getMachineDetails(hostname) {
 
 // Function to send the updated list of connected clients
 function broadcastClients() {
+
   const activeClients = Object.values(connectedClients).map(client => {
       const machineInfo = getMachineDetails(client.hostname);
       
@@ -181,6 +183,7 @@ function broadcastClients() {
       };
   });
 
+
   console.log("Broadcasting active clients:", activeClients); // Debugging line
 
   wss.clients.forEach((client) => {
@@ -189,11 +192,6 @@ function broadcastClients() {
       }
   });
 }
-
-
-
-
-
 
 
 
