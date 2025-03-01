@@ -75,8 +75,7 @@ wss.on('connection', (ws) => {
                   files: files || [],
                   isRendering: false,
                   lastSeen: Date.now(),
-                  isSynced: isSynced,  // ✅ Store sync status
-                  ws
+                  isSynced: isSynced
               };
 
               console.log(`Node registered: ${hostname} (sessionId: ${sessionId}, Synced: ${isSynced})`);
@@ -163,7 +162,8 @@ function broadcastClients() {
       sessionId: client.sessionId,
       files: client.files,
       isRendering: client.isRendering,
-      lastSeen: client.lastSeen
+      lastSeen: client.lastSeen,
+      isSynced: isSynced
   }));
 
   console.log("Broadcasting active clients:", activeClients); // Debugging line
