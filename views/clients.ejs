@@ -236,10 +236,14 @@ socket.onmessage = function(event) {
           const clientEl = document.createElement('div');
           clientEl.className = 'client-card';
           clientEl.innerHTML = `
-            <h3>${client.hostname}</h3>
-            <p>Files Rendered: ${client.files.length}</p>
-            <p>Status: ${client.isRendering ? 'Rendering' : 'Idle'}</p>
-            <p>Last Seen: ${new Date(client.lastSeen).toLocaleString()}</p>
+                            <h3>${client.hostname}</h3>
+                            <p><strong>Description:</strong> ${client.description}</p>
+                            <p><strong>Files Rendered:</strong> ${client.files.length}</p>
+                            <p><strong>Status:</strong> ${client.isRendering ? 'Rendering' : 'Idle'}</p>
+                            <p><strong>Last Seen:</strong> ${new Date(client.lastSeen).toLocaleString()}</p>
+                            <p><strong>Age:</strong> ${ageInSeconds} seconds</p>
+                            <p><strong>Houdini Versions:</strong> ${houdiniList}</p>
+                            <p class="${syncClass}">${client.isSynced ? 'Synced ✅' : 'Not Synced ❌'}</p>
           `;
           clientsList.appendChild(clientEl);
         });
